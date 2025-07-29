@@ -1,0 +1,42 @@
+@startuml
+
+title Saga Orchestration Pattern
+
+!include <C4/C4>
+!include <C4/C4_Container>
+!include <C4/C4_Component>
+
+!include <cloudinsight/kafka>
+!include <cloudinsight/cassandra>
+
+scale 0.5
+AddRelTag("kafka_link_outward", $textColor=#335DA5, $lineColor=#335DA5, $lineStyle=bold())
+AddRelTag("kafka_link_inward", $textColor=#3FBA11, $lineColor=#3FBA11, $lineStyle=bold())
+
+
+' External actor
+Person(enduser, "End User", "create order")
+
+Container(order_service, "Order-Service")
+ContainerDb(order_db, "Order Database", $techn="Postgres", $sprite="postgres")
+ContainerQueue(payment_event, "Topic:payment-event", "Kafka:9092", $sprite="kafka")
+ContainerQueue(inventory_event, "Topic:inventory-event", "Kafka:9092", $sprite="kafka")
+ContainerQueue(order_event, "Topic:order-event", "Kafka:9092", $sprite="kafka")
+Container(payment_service, "Payment-Service")
+Container(inventory_service, "Inventory-Service")
+ContainerDb(payment_db, "Payment Database", $techn="Postgres", $sprite="postgres")
+ContainerDb(invnetory_db, "Inventory Database", $techn="Postgres", $sprite="postgres")
+
+Rel(enduser, order_service, "/order")
+Rel(order_service, order_db, "Reads from and writes data to",  $techn="SQL/TCP")
+Rel(order_service, order_event, "", $tags="kafka_link_outward")
+Rel(payment_event, order_service, "", $tags="kafka_link_inward")
+Rel(inventory_event, order_service, "", $tags="kafka_link_inward")
+Rel(order_event, inventory_service, "", $tags="kafka_link_inward")
+Rel(order_event, payment_service, "", $tags="kafka_link_inward")
+Rel(payment_service, payment_event, "", $tags="kafka_link_outward")
+Rel(inventory_service, inventory_event, "", $tags="kafka_link_outward")
+Rel(payment_service, payment_db, "Reads from and writes data to",  $techn="SQL/TCP")
+Rel(inventory_service, invnetory_db, "Reads from and writes data to",  $techn="SQL/TCP")
+
+@enduml
